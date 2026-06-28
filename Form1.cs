@@ -55,6 +55,13 @@ namespace WinFormsApp2
             };
             this.MouseUp += (s, e) => _isDragging = false;
         }
+        private void lnkRegister_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            using var registerForm = new RegisterForm();
+            //this.Hide();
+            registerForm.ShowDialog();
+            this.Show();
+        }
 
         // ── Avtomatik çıxış timer ─────────────────────────────────────
         private void SetupAutoLogoutTimer()

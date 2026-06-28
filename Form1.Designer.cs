@@ -23,6 +23,7 @@
         private System.Windows.Forms.Button btnClose;
         private System.Windows.Forms.Panel pnlHeader;
         private System.Windows.Forms.Label lblCooldown;
+        private System.Windows.Forms.LinkLabel lnkRegister;
 
         protected override void Dispose(bool disposing)
         {
@@ -207,6 +208,18 @@
             txtPassword.TabIndex = 1;
             txtPassword.Enter += txtPassword_Enter;
             txtPassword.Leave += txtPassword_Leave;
+            // lnkRegister
+            lnkRegister = new LinkLabel();
+            lnkRegister.AutoSize = true;
+            lnkRegister.Font = new Font("Segoe UI", 9F);
+            lnkRegister.LinkColor = Color.FromArgb(16, 130, 70);
+            lnkRegister.Location = new Point(140, 560); // Qonaq düyməsinin altına yerləşdiririk
+            lnkRegister.Name = "lnkRegister";
+            lnkRegister.Size = new Size(120, 20);
+            lnkRegister.TabIndex = 7;
+            lnkRegister.TabStop = true;
+            lnkRegister.Text = "Hesabınız yoxdur? Qeydiyyat";
+            //lnkRegister.LinkClicked += lnkRegister_LinkClicked;
             // 
             // btnEye
             // 
@@ -247,6 +260,7 @@
             lnkForgot.TabStop = true;
             lnkForgot.Text = "Şifrəni unutdum?";
             lnkForgot.LinkClicked += lnkForgot_LinkClicked;
+
             // 
             // progressBar
             // 
@@ -312,6 +326,7 @@
             pnlHeader.ResumeLayout(false);
             pnlError.ResumeLayout(false);
             ResumeLayout(false);
+            pnlCard.Controls.Add(lnkRegister);
         }
     }
 }
