@@ -107,7 +107,7 @@
             btnClose.FlatStyle = FlatStyle.Flat;
             btnClose.Font = new Font("Segoe UI", 12F);
             btnClose.ForeColor = Color.FromArgb(80, 80, 80);
-            btnClose.Location = new Point(365, 0);
+            btnClose.Location = new Point(366, 1);
             btnClose.Name = "btnClose";
             btnClose.Size = new Size(35, 30);
             btnClose.TabIndex = 0;
