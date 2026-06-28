@@ -14,10 +14,8 @@ namespace WinFormsApp2
             SetupFormDrag();
         }
 
-        // ── Formu Sürüşdürmə (YENİLƏNDİ) ──────────────────────────────
         private void SetupFormDrag()
         {
-            // İndi form pnlMain üzərindən düzgün sürüklənəcək
             pnlMain.MouseDown += (s, e) =>
             {
                 if (e.Button == MouseButtons.Left)
@@ -50,7 +48,6 @@ namespace WinFormsApp2
             this.Region = new Region(path);
         }
 
-        // ── Qeydiyyat Logikası (YENİLƏNDİ) ────────────────────────────
         private void btnRegister_Click(object sender, EventArgs e)
         {
             string username = txtUsername.Text.Trim();
@@ -84,15 +81,23 @@ namespace WinFormsApp2
                 return;
             }
 
-            // Peşəkar tərəf: Əgər bu ad artıq varsa xəbərdarlıq et
+            // Məntiq 1: Ad artıq mövcuddur?
             if (Form1.RegisteredUsers.ContainsKey(username))
             {
                 ShowError("Bu istifadəçi adı artıq mövcuddur.");
                 return;
             }
 
-            // İstifadəçini Form1-in məlumat bazasına (Dictionary) kriptolu formada əlavə et
+            // Məntiq 2: Email artıq mövcuddur?
+            if (Form1.UserEmails.ContainsKey(email))
+            {
+                ShowError("Bu email artıq qeydiyyatdan keçib!");
+                return;
+            }
+
+            // İstifadəçini və Emailini Sistemə qeyd edirik
             Form1.RegisteredUsers.Add(username, Form1.HashSha256(password));
+            Form1.UserEmails.Add(email, username);
 
             MessageBox.Show("Qeydiyyat uğurla tamamlandı! İndi daxil ola bilərsiniz.",
                 "Uğurlu", MessageBoxButtons.OK, MessageBoxIcon.Information);

@@ -12,6 +12,7 @@ namespace WinFormsApp2
         private string _generatedCode = "";
         private System.Windows.Forms.Timer _timer;
         private int _remainingSeconds = 60;
+        private string _targetUsername = ""; // Şifrəsi dəyişdiriləcək istifadəçini yadda saxlamaq üçün
 
         public ForgotPasswordForm()
         {
@@ -23,7 +24,7 @@ namespace WinFormsApp2
 
         private void SetupFormDrag()
         {
-            this.MouseDown += (s, e) =>
+            pnlMain.MouseDown += (s, e) =>
             {
                 if (e.Button == MouseButtons.Left)
                 {
@@ -31,7 +32,7 @@ namespace WinFormsApp2
                     _dragStartPoint = new Point(e.X, e.Y);
                 }
             };
-            this.MouseMove += (s, e) =>
+            pnlMain.MouseMove += (s, e) =>
             {
                 if (_isDragging)
                 {
@@ -39,13 +40,12 @@ namespace WinFormsApp2
                     this.Location = new Point(p.X - _dragStartPoint.X, p.Y - _dragStartPoint.Y);
                 }
             };
-            this.MouseUp += (s, e) => _isDragging = false;
+            pnlMain.MouseUp += (s, e) => _isDragging = false;
         }
 
         private void SetupTimer()
         {
-            _timer = new System.Windows.Forms.Timer();
-            _timer.Interval = 1000;
+            _timer = new System.Windows.Forms.Timer { Interval = 1000 };
             _timer.Tick += Timer_Tick;
         }
 
@@ -77,7 +77,6 @@ namespace WinFormsApp2
             this.Region = new Region(path);
         }
 
-        // ── Bağlama ──────────────────────────────────────────────────
         private void btnClose_Click(object sender, EventArgs e)
         {
             this.DialogResult = DialogResult.Cancel;
@@ -101,10 +100,17 @@ namespace WinFormsApp2
                 return;
             }
 
-            // Təsdiq kodunu yarat
-            _generatedCode = GenerateVerificationCode();
+            // SİSTEMDƏ EMAİL VARMI DEYƏ YOXLANILMASI
+            if (!Form1.UserEmails.ContainsKey(email))
+            {
+                ShowError("Bu email sistemdə tapılmadı!");
+                return;
+            }
 
-            // Email göndər (simulyasiya)
+            // Varsa, sahibini yadda saxlayaq
+            _targetUsername = Form1.UserEmails[email];
+
+            _generatedCode = GenerateVerificationCode();
             bool sent = SendVerificationEmail(email, _generatedCode);
 
             if (sent)
@@ -138,7 +144,6 @@ namespace WinFormsApp2
             if (code == _generatedCode)
             {
                 ShowSuccess("Kod təsdiq edildi! Yeni şifrə təyin edə bilərsiniz.");
-
                 txtNewPassword.Visible = true;
                 txtConfirmPassword.Visible = true;
                 lblNewPassword.Visible = true;
@@ -174,94 +179,31 @@ namespace WinFormsApp2
                 return;
             }
 
-            if (!Regex.IsMatch(newPass, @"[A-Z]"))
-            {
-                ShowError("Şifrədə ən azı bir böyük hərf olmalıdır.");
-                return;
-            }
-
-            if (!Regex.IsMatch(newPass, @"[a-z]"))
-            {
-                ShowError("Şifrədə ən azı bir kiçik hərf olmalıdır.");
-                return;
-            }
-
-            if (!Regex.IsMatch(newPass, @"[0-9]"))
-            {
-                ShowError("Şifrədə ən azı bir rəqəm olmalıdır.");
-                return;
-            }
-
             if (newPass != confirmPass)
             {
                 ShowError("Şifrələr uyğun gəlmir.");
                 return;
             }
 
-            // Burada şifrəni yenilə
-            MessageBox.Show("Şifrə uğurla yeniləndi!", "Uğurlu",
+            // ŞİFRƏNİN SİSTEMDƏ (LÜĞƏTDƏ) HƏQİQƏTƏN YENİLƏNMƏSİ
+            Form1.RegisteredUsers[_targetUsername] = Form1.HashSha256(newPass);
+
+            MessageBox.Show("Şifrə uğurla yeniləndi! Yeni şifrənizlə daxil ola bilərsiniz.", "Uğurlu",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
 
-        // ── Email göndərmə ──────────────────────────────────────────
+        // Köməkçi Metodlar
         private bool SendVerificationEmail(string to, string code)
         {
             try
             {
-                // Əsl email göndərmək üçün:
-                using var smtp = new SmtpClient("smtp.gmail.com", 587);
-                smtp.EnableSsl = true;
-                smtp.Credentials = new NetworkCredential("your-email@gmail.com", "your-app-password");
-
-                using var msg = new MailMessage();
-                msg.From = new MailAddress("your-email@gmail.com", "SecureLogin");
-                msg.To.Add(to);
-                msg.Subject = "Şifrə sıfırlama təsdiq kodu";
-                msg.Body = $@"
-                    <html>
-                    <body style='font-family: Arial, sans-serif;'>
-                        <h2 style='color: #1A6B3C;'>Şifrə Sıfırlama</h2>
-                        <p>Təsdiq kodunuz: <strong style='font-size: 24px; color: #1A6B3C;'>{code}</strong></p>
-                        <p>Bu kod 5 dəqiqə ərzində etibarlıdır.</p>
-                        <hr>
-                        <small>SecureLogin tərəfindən göndərildi</small>
-                    </body>
-                    </html>";
-                msg.IsBodyHtml = true;
-
-                smtp.Send(msg);
-
-                // Demo üçün mesaj göstər
+                // Demo simulyasiyası
                 MessageBox.Show($"Təsdiq kodu: {code}\n\n(Email göndərildi: {to})",
                     "Məlumat", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
                 return true;
-            }
-            catch
-            {
-                // Demo üçün true qaytar
-                MessageBox.Show($"Təsdiq kodu: {code}\n\n(Email göndərilə bilmədi, lakin test üçün kod göstərilir)",
-                    "Məlumat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return true;
-            }
-        }
-
-        // ── Köməkçi metodlar ──────────────────────────────────────────
-        private string GenerateVerificationCode()
-        {
-            var random = new Random();
-            return random.Next(100000, 999999).ToString();
-        }
-
-        private bool IsValidEmail(string email)
-        {
-            try
-            {
-                var addr = new MailAddress(email);
-                return addr.Address == email;
             }
             catch
             {
@@ -269,31 +211,17 @@ namespace WinFormsApp2
             }
         }
 
-        private void ShowError(string msg)
+        private string GenerateVerificationCode() => new Random().Next(100000, 999999).ToString();
+
+        private bool IsValidEmail(string email)
         {
-            lblError.Text = "  " + msg;
-            pnlError.Visible = true;
-            pnlError.BackColor = Color.FromArgb(255, 235, 235);
+            try { return new MailAddress(email).Address == email; }
+            catch { return false; }
         }
 
-        private void ShowSuccess(string msg)
-        {
-            lblError.Text = "  ✅ " + msg;
-            pnlError.Visible = true;
-            pnlError.BackColor = Color.FromArgb(220, 255, 220);
-        }
-
-        // ── Hover effektləri ──────────────────────────────────────────
-        private void btnClose_MouseEnter(object sender, EventArgs e)
-        {
-            btnClose.BackColor = Color.FromArgb(255, 80, 80);
-            btnClose.ForeColor = Color.White;
-        }
-
-        private void btnClose_MouseLeave(object sender, EventArgs e)
-        {
-            btnClose.BackColor = Color.Transparent;
-            btnClose.ForeColor = Color.FromArgb(80, 80, 80);
-        }
+        private void ShowError(string msg) { lblError.Text = "  " + msg; pnlError.Visible = true; pnlError.BackColor = Color.FromArgb(255, 235, 235); }
+        private void ShowSuccess(string msg) { lblError.Text = "  ✅ " + msg; pnlError.Visible = true; pnlError.BackColor = Color.FromArgb(220, 255, 220); }
+        private void btnClose_MouseEnter(object sender, EventArgs e) { btnClose.BackColor = Color.FromArgb(255, 80, 80); btnClose.ForeColor = Color.White; }
+        private void btnClose_MouseLeave(object sender, EventArgs e) { btnClose.BackColor = Color.Transparent; btnClose.ForeColor = Color.FromArgb(80, 80, 80); }
     }
 }
