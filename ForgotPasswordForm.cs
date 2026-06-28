@@ -1,10 +1,7 @@
-﻿using System;
-using System.Drawing;
-using System.Drawing.Drawing2D;
+﻿using System.Drawing.Drawing2D;
 using System.Net;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 
 namespace WinFormsApp2
 {

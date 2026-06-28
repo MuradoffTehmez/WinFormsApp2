@@ -1,13 +1,7 @@
-using System;
-using System.Drawing;
+using Microsoft.Win32;
 using System.Drawing.Drawing2D;
-using System.Net;
-using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Microsoft.Win32;
 
 namespace WinFormsApp2
 {
