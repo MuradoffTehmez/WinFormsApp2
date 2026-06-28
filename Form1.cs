@@ -7,6 +7,13 @@ namespace WinFormsApp2
 {
     public partial class Form1 : Form
     {
+        // Peşəkar yanaşma: İstifadəçiləri yadda saxlamaq üçün statik lüğət (Dictionary)
+        // Başlanğıc olaraq "admin" istifadəçisi sistemdə mövcuddur
+        public static Dictionary<string, string> RegisteredUsers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "admin", HashSha256("Admin@123") }
+        };
+
         private bool _showPassword = false;
         private int _failCount = 0;
         private const int MAX_FAIL = 5;
@@ -24,50 +31,42 @@ namespace WinFormsApp2
             SetupFormDrag();
             SetupAutoLogoutTimer();
 
-            this.txtUsername.KeyDown += (s, e) =>
-            {
-                if (e.KeyCode == Keys.Enter) txtPassword.Focus();
-            };
-            this.txtPassword.KeyDown += (s, e) =>
-            {
-                if (e.KeyCode == Keys.Enter) btnLogin_Click(s, e);
-            };
+            // Enter düyməsi ilə keçid və giriş
+            this.txtUsername.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) txtPassword.Focus(); };
+            this.txtPassword.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) btnLogin_Click(s, e); };
         }
 
-        // ── Formu sürüşdürmə ─────────────────────────────────────────
+        // ── Formu Sürüşdürmə (YENİLƏNDİ) ──────────────────────────────
+        // Əvvəlcə form arxada qalırdı, indi birbaşa panel üzərindən sürüşdürmək mümkündür.
         private void SetupFormDrag()
         {
-            this.MouseDown += (s, e) =>
+            Control[] dragControls = { pnlMain, pnlHeader }; // Hansı panellərdən tutmaq olarsa
+            foreach (var control in dragControls)
             {
-                if (e.Button == MouseButtons.Left)
+                control.MouseDown += (s, e) =>
                 {
-                    _isDragging = true;
-                    _dragStartPoint = new Point(e.X, e.Y);
-                }
-            };
-            this.MouseMove += (s, e) =>
-            {
-                if (_isDragging)
+                    if (e.Button == MouseButtons.Left)
+                    {
+                        _isDragging = true;
+                        _dragStartPoint = new Point(e.X, e.Y);
+                    }
+                };
+                control.MouseMove += (s, e) =>
                 {
-                    Point p = PointToScreen(e.Location);
-                    this.Location = new Point(p.X - _dragStartPoint.X, p.Y - _dragStartPoint.Y);
-                }
-            };
-            this.MouseUp += (s, e) => _isDragging = false;
-        }
-        private void lnkRegister_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            using var registerForm = new RegisterForm();
-            //this.Hide();
-            registerForm.ShowDialog();
-            this.Show();
+                    if (_isDragging)
+                    {
+                        Point p = PointToScreen(e.Location);
+                        this.Location = new Point(p.X - _dragStartPoint.X, p.Y - _dragStartPoint.Y);
+                    }
+                };
+                control.MouseUp += (s, e) => _isDragging = false;
+            }
         }
 
         // ── Avtomatik çıxış timer ─────────────────────────────────────
         private void SetupAutoLogoutTimer()
         {
-            _timer = new System.Windows.Forms.Timer();
-            _timer.Interval = 1000;
+            _timer = new System.Windows.Forms.Timer { Interval = 1000 };
             _timer.Tick += Timer_Tick;
         }
 
@@ -98,7 +97,6 @@ namespace WinFormsApp2
                 LinearGradientMode.ForwardDiagonal);
             e.Graphics.FillRectangle(brush, pnlMain.ClientRectangle);
 
-            // Dekorativ dairələr
             using var pen = new Pen(Color.FromArgb(60, 180, 120), 2);
             e.Graphics.DrawEllipse(pen, -80, -80, 250, 250);
             using var pen2 = new Pen(Color.FromArgb(40, 160, 100), 2);
@@ -107,7 +105,6 @@ namespace WinFormsApp2
             e.Graphics.DrawEllipse(pen3, pnlMain.Width / 2 - 100, -50, 200, 200);
         }
 
-        // ── Karta yuvarlaq künc ─────────────────────────────────────
         private void ApplyRoundedCard()
         {
             int radius = 20;
@@ -121,7 +118,6 @@ namespace WinFormsApp2
             pnlCard.Region = new Region(path);
         }
 
-        // ── Göz düyməsi ──────────────────────────────────────────────
         private void btnEye_Click(object sender, EventArgs e)
         {
             _showPassword = !_showPassword;
@@ -130,7 +126,7 @@ namespace WinFormsApp2
             btnEye.BackColor = _showPassword ? Color.FromArgb(220, 255, 220) : Color.White;
         }
 
-        // ── Login ─────────────────────────────────────────────────────
+        // ── Login Yoxlaması (YENİLƏNDİ) ───────────────────────────────
         private async void btnLogin_Click(object sender, EventArgs e)
         {
             HideError();
@@ -154,10 +150,11 @@ namespace WinFormsApp2
             }
 
             SetLoading(true);
-            await Task.Delay(700);
+            await Task.Delay(700); // Sistem yoxlaması simulyasiyası
 
-            bool ok = user.Equals("admin", StringComparison.OrdinalIgnoreCase)
-                   && HashSha256(pass) == HashSha256("Admin@123");
+            // Şifrəni hash-ləyirik və siyahımızda olub-olmadığını yoxlayırıq
+            string hashedInputPass = HashSha256(pass);
+            bool ok = RegisteredUsers.ContainsKey(user) && RegisteredUsers[user] == hashedInputPass;
 
             SetLoading(false);
 
@@ -168,8 +165,6 @@ namespace WinFormsApp2
                 else ClearRegistry();
 
                 AnimateSuccess();
-                MessageBox.Show($"Xoş gəldiniz, {user}!",
-                    "Uğurlu giriş", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 OpenDashboard(user);
             }
@@ -183,7 +178,16 @@ namespace WinFormsApp2
             }
         }
 
-        // ── Animasiyalar ──────────────────────────────────────────────
+        // ── Qeydiyyat Səhifəsinə Keçid ────────────────────────────────
+        private void lnkRegister_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            using var registerForm = new RegisterForm();
+            this.Hide();
+            registerForm.ShowDialog();
+            this.Show();
+        }
+
+        // ── Animasiyalar və Digər Köməkçi Metodlar ────────────────────
         private async void AnimateShake(Panel panel)
         {
             var original = panel.Location;
@@ -208,64 +212,18 @@ namespace WinFormsApp2
             pnlCard.BackColor = Color.White;
         }
 
-        // ── Qonaq rejimi ─────────────────────────────────────────────
         private void btnGuest_Click(object sender, EventArgs e)
         {
             using var guestForm = new GuestForm();
-            var result = guestForm.ShowDialog();
-            if (result == DialogResult.OK)
-            {
-                OpenDashboard("Qonaq");
-            }
+            if (guestForm.ShowDialog() == DialogResult.OK) OpenDashboard("Qonaq");
         }
 
-        // ── Şifrəni unutdum ───────────────────────────────────────────
         private void lnkForgot_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             using var forgotForm = new ForgotPasswordForm();
             forgotForm.ShowDialog();
         }
 
-        // ── Hover effektləri ──────────────────────────────────────────
-        private void btnLogin_MouseEnter(object sender, EventArgs e) =>
-            btnLogin.BackColor = Color.FromArgb(20, 150, 80);
-
-        private void btnLogin_MouseLeave(object sender, EventArgs e) =>
-            btnLogin.BackColor = Color.FromArgb(16, 130, 70);
-
-        private void btnGuest_MouseEnter(object sender, EventArgs e)
-        {
-            btnGuest.BackColor = Color.FromArgb(230, 255, 240);
-            btnGuest.FlatAppearance.BorderColor = Color.FromArgb(16, 130, 70);
-        }
-
-        private void btnGuest_MouseLeave(object sender, EventArgs e)
-        {
-            btnGuest.BackColor = Color.White;
-            btnGuest.FlatAppearance.BorderColor = Color.FromArgb(200, 200, 200);
-        }
-
-        private void txtUsername_Enter(object sender, EventArgs e)
-        {
-            txtUsername.BackColor = Color.FromArgb(240, 255, 245);
-        }
-
-        private void txtUsername_Leave(object sender, EventArgs e)
-        {
-            txtUsername.BackColor = Color.White;
-        }
-
-        private void txtPassword_Enter(object sender, EventArgs e)
-        {
-            txtPassword.BackColor = Color.FromArgb(240, 255, 245);
-        }
-
-        private void txtPassword_Leave(object sender, EventArgs e)
-        {
-            txtPassword.BackColor = Color.White;
-        }
-
-        // ── Köməkçi metodlar ──────────────────────────────────────────
         private void ShowError(string msg)
         {
             lblError.Text = "  " + msg;
@@ -290,8 +248,8 @@ namespace WinFormsApp2
             this.Show();
         }
 
-        // ── SHA-256 ───────────────────────────────────────────────────
-        private static string HashSha256(string input)
+        // ── SHA-256 (Hər kəs istifadə edə bilsin deyə 'public static' edildi)
+        public static string HashSha256(string input)
         {
             using var sha = SHA256.Create();
             byte[] bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
@@ -300,7 +258,7 @@ namespace WinFormsApp2
             return sb.ToString();
         }
 
-        // ── Registry ──────────────────────────────────────────────────
+        // Registry və UI hover effektləri...
         private void SaveUserToRegistry(string user)
         {
             using var key = Registry.CurrentUser.CreateSubKey(REG_KEY);
@@ -324,22 +282,16 @@ namespace WinFormsApp2
             key?.DeleteValue("RememberedUser", false);
         }
 
-        // ── Bağlama düyməsi ──────────────────────────────────────────
-        private void btnClose_Click(object sender, EventArgs e)
-        {
-            Application.Exit();
-        }
-
-        private void btnClose_MouseEnter(object sender, EventArgs e)
-        {
-            btnClose.BackColor = Color.FromArgb(255, 80, 80);
-            btnClose.ForeColor = Color.White;
-        }
-
-        private void btnClose_MouseLeave(object sender, EventArgs e)
-        {
-            btnClose.BackColor = Color.Transparent;
-            btnClose.ForeColor = Color.FromArgb(80, 80, 80);
-        }
+        private void btnClose_Click(object sender, EventArgs e) => Application.Exit();
+        private void btnClose_MouseEnter(object sender, EventArgs e) { btnClose.BackColor = Color.FromArgb(255, 80, 80); btnClose.ForeColor = Color.White; }
+        private void btnClose_MouseLeave(object sender, EventArgs e) { btnClose.BackColor = Color.Transparent; btnClose.ForeColor = Color.FromArgb(80, 80, 80); }
+        private void btnLogin_MouseEnter(object sender, EventArgs e) => btnLogin.BackColor = Color.FromArgb(20, 150, 80);
+        private void btnLogin_MouseLeave(object sender, EventArgs e) => btnLogin.BackColor = Color.FromArgb(16, 130, 70);
+        private void btnGuest_MouseEnter(object sender, EventArgs e) { btnGuest.BackColor = Color.FromArgb(230, 255, 240); btnGuest.FlatAppearance.BorderColor = Color.FromArgb(16, 130, 70); }
+        private void btnGuest_MouseLeave(object sender, EventArgs e) { btnGuest.BackColor = Color.White; btnGuest.FlatAppearance.BorderColor = Color.FromArgb(200, 200, 200); }
+        private void txtUsername_Enter(object sender, EventArgs e) => txtUsername.BackColor = Color.FromArgb(240, 255, 245);
+        private void txtUsername_Leave(object sender, EventArgs e) => txtUsername.BackColor = Color.White;
+        private void txtPassword_Enter(object sender, EventArgs e) => txtPassword.BackColor = Color.FromArgb(240, 255, 245);
+        private void txtPassword_Leave(object sender, EventArgs e) => txtPassword.BackColor = Color.White;
     }
 }

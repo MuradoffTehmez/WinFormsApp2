@@ -1,5 +1,4 @@
 ﻿using System.Drawing.Drawing2D;
-using System.Text.RegularExpressions;
 
 namespace WinFormsApp2
 {
@@ -15,9 +14,11 @@ namespace WinFormsApp2
             SetupFormDrag();
         }
 
+        // ── Formu Sürüşdürmə (YENİLƏNDİ) ──────────────────────────────
         private void SetupFormDrag()
         {
-            this.MouseDown += (s, e) =>
+            // İndi form pnlMain üzərindən düzgün sürüklənəcək
+            pnlMain.MouseDown += (s, e) =>
             {
                 if (e.Button == MouseButtons.Left)
                 {
@@ -25,7 +26,7 @@ namespace WinFormsApp2
                     _dragStartPoint = new Point(e.X, e.Y);
                 }
             };
-            this.MouseMove += (s, e) =>
+            pnlMain.MouseMove += (s, e) =>
             {
                 if (_isDragging)
                 {
@@ -33,7 +34,7 @@ namespace WinFormsApp2
                     this.Location = new Point(p.X - _dragStartPoint.X, p.Y - _dragStartPoint.Y);
                 }
             };
-            this.MouseUp += (s, e) => _isDragging = false;
+            pnlMain.MouseUp += (s, e) => _isDragging = false;
         }
 
         private void ApplyRoundedCorners()
@@ -49,11 +50,7 @@ namespace WinFormsApp2
             this.Region = new Region(path);
         }
 
-        private void btnClose_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
-
+        // ── Qeydiyyat Logikası (YENİLƏNDİ) ────────────────────────────
         private void btnRegister_Click(object sender, EventArgs e)
         {
             string username = txtUsername.Text.Trim();
@@ -61,6 +58,7 @@ namespace WinFormsApp2
             string password = txtPassword.Text;
             string confirmPassword = txtConfirmPassword.Text;
 
+            // Xətaların yoxlanılması
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email) ||
                 string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(confirmPassword))
             {
@@ -86,13 +84,24 @@ namespace WinFormsApp2
                 return;
             }
 
-            // Burada normalda məlumatlar bazaya (SQL/JSON) yazılır
+            // Peşəkar tərəf: Əgər bu ad artıq varsa xəbərdarlıq et
+            if (Form1.RegisteredUsers.ContainsKey(username))
+            {
+                ShowError("Bu istifadəçi adı artıq mövcuddur.");
+                return;
+            }
+
+            // İstifadəçini Form1-in məlumat bazasına (Dictionary) kriptolu formada əlavə et
+            Form1.RegisteredUsers.Add(username, Form1.HashSha256(password));
+
             MessageBox.Show("Qeydiyyat uğurla tamamlandı! İndi daxil ola bilərsiniz.",
                 "Uğurlu", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
+
+        private void btnClose_Click(object sender, EventArgs e) => this.Close();
 
         private void ShowError(string msg)
         {

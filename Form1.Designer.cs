@@ -16,6 +16,7 @@
         private System.Windows.Forms.TextBox txtPassword;
         private System.Windows.Forms.CheckBox chkRemember;
         private System.Windows.Forms.LinkLabel lnkForgot;
+        private System.Windows.Forms.LinkLabel lnkRegister; // YENİ: Qeydiyyat Linki
         private System.Windows.Forms.Button btnLogin;
         private System.Windows.Forms.Button btnGuest;
         private System.Windows.Forms.ProgressBar progressBar;
@@ -23,7 +24,6 @@
         private System.Windows.Forms.Button btnClose;
         private System.Windows.Forms.Panel pnlHeader;
         private System.Windows.Forms.Label lblCooldown;
-        private System.Windows.Forms.LinkLabel lnkRegister;
 
         protected override void Dispose(bool disposing)
         {
@@ -49,9 +49,11 @@
             btnEye = new Button();
             chkRemember = new CheckBox();
             lnkForgot = new LinkLabel();
+            lnkRegister = new LinkLabel(); // YENİ
             progressBar = new ProgressBar();
             btnLogin = new Button();
             btnGuest = new Button();
+            lblCooldown = new Label();
             pnlMain.SuspendLayout();
             pnlCard.SuspendLayout();
             pnlHeader.SuspendLayout();
@@ -82,9 +84,11 @@
             pnlCard.Controls.Add(btnEye);
             pnlCard.Controls.Add(chkRemember);
             pnlCard.Controls.Add(lnkForgot);
+            pnlCard.Controls.Add(lnkRegister); // YENİ EKLENDİ
             pnlCard.Controls.Add(progressBar);
             pnlCard.Controls.Add(btnLogin);
             pnlCard.Controls.Add(btnGuest);
+            pnlCard.Controls.Add(lblCooldown);
             pnlCard.Location = new Point(90, 60);
             pnlCard.Name = "pnlCard";
             pnlCard.Size = new Size(400, 640);
@@ -208,18 +212,6 @@
             txtPassword.TabIndex = 1;
             txtPassword.Enter += txtPassword_Enter;
             txtPassword.Leave += txtPassword_Leave;
-            // lnkRegister
-            lnkRegister = new LinkLabel();
-            lnkRegister.AutoSize = true;
-            lnkRegister.Font = new Font("Segoe UI", 9F);
-            lnkRegister.LinkColor = Color.FromArgb(16, 130, 70);
-            lnkRegister.Location = new Point(140, 560); // Qonaq düyməsinin altına yerləşdiririk
-            lnkRegister.Name = "lnkRegister";
-            lnkRegister.Size = new Size(120, 20);
-            lnkRegister.TabIndex = 7;
-            lnkRegister.TabStop = true;
-            lnkRegister.Text = "Hesabınız yoxdur? Qeydiyyat";
-            //lnkRegister.LinkClicked += lnkRegister_LinkClicked;
             // 
             // btnEye
             // 
@@ -260,7 +252,6 @@
             lnkForgot.TabStop = true;
             lnkForgot.Text = "Şifrəni unutdum?";
             lnkForgot.LinkClicked += lnkForgot_LinkClicked;
-
             // 
             // progressBar
             // 
@@ -310,6 +301,30 @@
             btnGuest.MouseEnter += btnGuest_MouseEnter;
             btnGuest.MouseLeave += btnGuest_MouseLeave;
             // 
+            // lnkRegister
+            // 
+            lnkRegister.AutoSize = true;
+            lnkRegister.Font = new Font("Segoe UI", 9F);
+            lnkRegister.LinkColor = Color.FromArgb(16, 130, 70);
+            lnkRegister.Location = new Point(110, 570);
+            lnkRegister.Name = "lnkRegister";
+            lnkRegister.Size = new Size(180, 20);
+            lnkRegister.TabIndex = 7;
+            lnkRegister.TabStop = true;
+            lnkRegister.Text = "Hesabınız yoxdur? Qeydiyyat";
+            lnkRegister.LinkClicked += lnkRegister_LinkClicked;
+            // 
+            // lblCooldown
+            // 
+            lblCooldown.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblCooldown.ForeColor = Color.FromArgb(200, 50, 50);
+            lblCooldown.Location = new Point(150, 600);
+            lblCooldown.Name = "lblCooldown";
+            lblCooldown.Size = new Size(100, 30);
+            lblCooldown.TabIndex = 8;
+            lblCooldown.TextAlign = ContentAlignment.MiddleCenter;
+            lblCooldown.Visible = false;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -326,7 +341,6 @@
             pnlHeader.ResumeLayout(false);
             pnlError.ResumeLayout(false);
             ResumeLayout(false);
-            pnlCard.Controls.Add(lnkRegister);
         }
     }
 }
